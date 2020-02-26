@@ -127,16 +127,16 @@ def move_to_cpu(t):
 def calc_gradient_penalty(netD, real_data, fake_data, LAMBDA, device):
     #print real_data.size()
     alpha = torch.rand(1, 1)
-    alpha = alpha.expand(real_data.size())
+    alpha = alpha.expand(real_data[0].size())
     alpha = alpha.to(device)#cuda() #gpu) #if use_cuda else alpha
 
-    interpolates = alpha * real_data + ((1 - alpha) * fake_data)
+    interpolates = alpha * real_data[0] + ((1 - alpha) * fake_data[1])
 
 
     interpolates = interpolates.to(device)#.cuda()
     interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
 
-    disc_interpolates = netD(interpolates)
+    disc_interpolates = netD[1](interpolates)
 
     gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
                               grad_outputs=torch.ones(disc_interpolates.size()).to(device),#.cuda(), #if use_cuda else torch.ones(
@@ -151,6 +151,15 @@ def read_image(opt):
     x = np2torch(x,opt)
     x = x[:,0:3,:,:]
     return x
+
+def read_images(opt):
+    x = img.imread('%s/%s' % (opt.input_dir,opt.input_name))
+    y = img.imread('%s/%s' % (opt.input_dir,opt.input_name2))
+    x = np2torch(x,opt)
+    y = np2torch(y,opt)
+    x = x[:,0:3,:,:]
+    y = y[:,0:3,:,:]
+    return [x,y]
 
 def read_image_dir(dir,opt):
     x = img.imread('%s' % (dir))
@@ -188,8 +197,10 @@ def read_image2np(opt):
     return x
 
 def save_networks(netG,netD,z,opt):
-    torch.save(netG.state_dict(), '%s/netG.pth' % (opt.outf))
-    torch.save(netD.state_dict(), '%s/netD.pth' % (opt.outf))
+    torch.save(netG[0].state_dict(), '%s/netG1.pth' % (opt.outf))
+    torch.save(netG[1].state_dict(), '%s/netG2.pth' % (opt.outf))
+    torch.save(netD[0].state_dict(), '%s/netD1.pth' % (opt.outf))
+    torch.save(netD[1].state_dict(), '%s/netD1.pth' % (opt.outf))
     torch.save(z, '%s/z_opt.pth' % (opt.outf))
 
 def adjust_scales2image(real_,opt):
@@ -352,5 +363,3 @@ def dilate_mask(mask,opt):
     plt.imsave('%s/%s_mask_dilated.png' % (opt.ref_dir, opt.ref_name[:-4]), convert_image_np(mask), vmin=0,vmax=1)
     mask = (mask-mask.min())/(mask.max()-mask.min())
     return mask
-
-

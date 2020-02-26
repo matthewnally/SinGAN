@@ -94,8 +94,8 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
     for G,Z_opt,noise_amp in zip(Gs,Zs,NoiseAmp):
         pad1 = ((opt.ker_size-1)*opt.num_layer)/2
         m = nn.ZeroPad2d(int(pad1))
-        nzx = (Z_opt.shape[2]-pad1*2)*scale_v
-        nzy = (Z_opt.shape[3]-pad1*2)*scale_h
+        nzx = (Z_opt[0].shape[2]-pad1*2)*scale_v
+        nzy = (Z_opt[0].shape[3]-pad1*2)*scale_h
 
         images_prev = images_cur
         images_cur = []
@@ -118,7 +118,7 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
                 I_prev = images_prev[i]
                 I_prev = imresize(I_prev,1/opt.scale_factor, opt)
                 if opt.mode != "SR":
-                    I_prev = I_prev[:, :, 0:round(scale_v * reals[n].shape[2]), 0:round(scale_h * reals[n].shape[3])]
+                    I_prev = I_prev[:, :, 0:round(scale_v * reals[n][0].shape[2]), 0:round(scale_h * reals[n][0].shape[3])]
                     I_prev = m(I_prev)
                     I_prev = I_prev[:,:,0:z_curr.shape[2],0:z_curr.shape[3]]
                     I_prev = functions.upsampling(I_prev,z_curr.shape[2],z_curr.shape[3])
@@ -126,7 +126,7 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
                     I_prev = m(I_prev)
 
             if n < gen_start_scale:
-                z_curr = Z_opt
+                z_curr = Z_opt[0]
 
             z_in = noise_amp*(z_curr)+I_prev
             I_curr = G(z_in.detach(),I_prev)
@@ -147,4 +147,3 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
             images_cur.append(I_curr)
         n+=1
     return I_curr.detach()
-
