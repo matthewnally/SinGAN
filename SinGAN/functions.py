@@ -200,7 +200,7 @@ def save_networks(netG,netD,z,opt):
     torch.save(netG[0].state_dict(), '%s/netG1.pth' % (opt.outf))
     torch.save(netG[1].state_dict(), '%s/netG2.pth' % (opt.outf))
     torch.save(netD[0].state_dict(), '%s/netD1.pth' % (opt.outf))
-    torch.save(netD[1].state_dict(), '%s/netD1.pth' % (opt.outf))
+    torch.save(netD[1].state_dict(), '%s/netD2.pth' % (opt.outf))
     torch.save(z, '%s/z_opt.pth' % (opt.outf))
 
 def adjust_scales2image(real_,opt):
