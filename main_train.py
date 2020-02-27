@@ -33,4 +33,7 @@ if __name__ == '__main__':
     real = functions.read_image(opt)
     functions.adjust_scales2image(real, opt)
     train(opt, Gs, Zs, reals, NoiseAmp)
+    real_ = functions.read_images(opt)
+    real = [imresize(real_[0],opt.scale1,opt), imresize(real_[1],opt.scale1,opt)]
+    reals = [functions.creat_reals_pyramid(real[0],reals,opt), functions.creat_reals_pyramid(real[1],reals,opt)]
     SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt)
