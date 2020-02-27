@@ -94,8 +94,8 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
     for G,Z_opt,noise_amp in zip(Gs,Zs,NoiseAmp):
         pad1 = ((opt.ker_size-1)*opt.num_layer)/2
         m = nn.ZeroPad2d(int(pad1))
-        nzx = (Z_opt[0].shape[2]-pad1*2)*scale_v
-        nzy = (Z_opt[0].shape[3]-pad1*2)*scale_h
+        nzx = (Z_opt.shape[2]-pad1*2)*scale_v
+        nzy = (Z_opt.shape[3]-pad1*2)*scale_h
 
         images_prev = images_cur
         images_cur = []
@@ -129,7 +129,9 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
                 z_curr = Z_opt[0]
 
             z_in = noise_amp*(z_curr)+I_prev
-            I_curr = G(z_in.detach(),I_prev)
+            I_curr_mid = G[0](z_in.detach(),I_prev)
+            z_in2 = noise_amp*z+m(G[0](z_in.detach(),G_z))
+            I_curr = G[1](z_in2.detach(),G[0](z_in.detach(),G_z))
 
             if n == len(reals)-1:
                 if opt.mode == 'train':
@@ -142,6 +144,7 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
                     pass
                 if (opt.mode != "harmonization") & (opt.mode != "editing") & (opt.mode != "SR") & (opt.mode != "paint2image"):
                     plt.imsave('%s/%d.png' % (dir2save, i), functions.convert_image_np(I_curr.detach()), vmin=0,vmax=1)
+                    plt.imsave('%s/%d_mid.png' % (dir2save, i), functions.convert_image_np(I_curr_mid.detach()), vmin=0,vmax=1)
                     #plt.imsave('%s/%d_%d.png' % (dir2save,i,n),functions.convert_image_np(I_curr.detach()), vmin=0, vmax=1)
                     #plt.imsave('%s/in_s.png' % (dir2save), functions.convert_image_np(in_s), vmin=0,vmax=1)
             images_cur.append(I_curr)

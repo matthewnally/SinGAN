@@ -267,7 +267,7 @@ def draw_concat(Gs,Zs,reals,NoiseAmp,in_s,mode,m_noise,m_image,opt):
                 G_z = m_image(G_z)
                 z_in = noise_amp*Z_opt+G_z
                 z_in2 = noise_amp*Z_opt+m_image(G[0](z_in.detach(),G_z))
-                G_z = G[1](z_in2.detach(),G[0](z_in2.detach(),G_z))
+                G_z = G[1](z_in2.detach(),G[0](z_in.detach(),G_z))
                 G_z = imresize(G_z,1/opt.scale_factor,opt)
                 G_z = G_z[:,:,0:real_next.shape[2],0:real_next.shape[3]]
                 #if count != (len(Gs)-1):
