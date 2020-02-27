@@ -118,6 +118,7 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
                 I_prev = images_prev[i]
                 I_prev = imresize(I_prev,1/opt.scale_factor, opt)
                 if opt.mode != "SR":
+                    print(I_prev.shape)
                     I_prev = I_prev[:, :, 0:round(scale_v * reals[0][n].shape[2]), 0:round(scale_h * reals[0][n].shape[3])]
                     I_prev = m(I_prev)
                     I_prev = I_prev[:,:,0:z_curr.shape[2],0:z_curr.shape[3]]
