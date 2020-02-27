@@ -72,7 +72,9 @@ def train(opt,Gs,Zs,reals,NoiseAmp):
 
 def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
 
-    real = reals[len(Gs)]
+    real = [reals[0][len(Gs)], reals[1][len(Gs)]]
+    print(len(real))
+    print(real[0].shape)
     opt.nzx = real[0].shape[2]#+(opt.ker_size-1)*(opt.num_layer)
     opt.nzy = real[0].shape[3]#+(opt.ker_size-1)*(opt.num_layer)
     opt.receptive_field = opt.ker_size + ((opt.ker_size-1)*(opt.num_layer-1))*opt.stride
@@ -142,6 +144,7 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
                     prev = m_image(prev)
                     z_prev = draw_concat(Gs,Zs,reals,NoiseAmp,in_s,'rec',m_noise,m_image,opt)
                     criterion = nn.MSELoss()
+                    print(real[0].shape)
                     RMSE = torch.sqrt(criterion(real[0], z_prev))
                     opt.noise_amp = opt.noise_amp_init*RMSE
                     z_prev = m_image(z_prev)
@@ -242,31 +245,31 @@ def draw_concat(Gs,Zs,reals,NoiseAmp,in_s,mode,m_noise,m_image,opt):
         if mode == 'rand':
             count = 0
             pad_noise = int(((opt.ker_size-1)*opt.num_layer)/2)
-            for G,Z_opt,real_curr,real_next,noise_amp in zip(Gs,Zs,reals,reals[1:],NoiseAmp):
+            for G,Z_opt,real_curr,real_next,noise_amp in zip(Gs,Zs,reals[0],reals[0][1:],NoiseAmp):
                 if count == 0:
-                    z = functions.generate_noise([1, Z_opt[0].shape[2] - 2 * pad_noise, Z_opt[0].shape[3] - 2 * pad_noise], device=opt.device)
+                    z = functions.generate_noise([1, Z_opt.shape[2] - 2 * pad_noise, Z_opt.shape[3] - 2 * pad_noise], device=opt.device)
                     z = z.expand(1, 3, z.shape[2], z.shape[3])
                 else:
-                    z = functions.generate_noise([opt.nc_z,Z_opt[0].shape[2] - 2 * pad_noise, Z_opt[0].shape[3] - 2 * pad_noise], device=opt.device)
+                    z = functions.generate_noise([opt.nc_z,Z_opt.shape[2] - 2 * pad_noise, Z_opt.shape[3] - 2 * pad_noise], device=opt.device)
                 z = m_noise(z)
-                G_z = G_z[:,:,0:real_curr[0].shape[2],0:real_curr[0].shape[3]]
+                G_z = G_z[:,:,0:real_curr.shape[2],0:real_curr.shape[3]]
                 G_z = m_image(G_z)
                 z_in = noise_amp*z+G_z
-                z_in2= noise_amp*z+G[0](z_in.detach(),G_z)
+                z_in2= noise_amp*z+m_image(G[0](z_in.detach(),G_z))
                 G_z = G[1](z_in2.detach(),G[0](z_in.detach(),G_z))
                 G_z = imresize(G_z,1/opt.scale_factor,opt)
-                G_z = G_z[:,:,0:real_next[0].shape[2],0:real_next[0].shape[3]]
+                G_z = G_z[:,:,0:real_next.shape[2],0:real_next.shape[3]]
                 count += 1
         if mode == 'rec':
             count = 0
-            for G,Z_opt,real_curr,real_next,noise_amp in zip(Gs,Zs,reals,reals[1:],NoiseAmp):
-                G_z = G_z[:, :, 0:real_curr[0].shape[2], 0:real_curr[0].shape[3]]
+            for G,Z_opt,real_curr,real_next,noise_amp in zip(Gs,Zs,reals[0],reals[0][1:],NoiseAmp):
+                G_z = G_z[:, :, 0:real_curr.shape[2], 0:real_curr.shape[3]]
                 G_z = m_image(G_z)
-                z_in = noise_amp*Z_opt[0]+G_z
-                z_in2 = noise_amp*Z_opt[1]+G[0](z_in.detach(),G_z)
+                z_in = noise_amp*Z_opt+G_z
+                z_in2 = noise_amp*Z_opt+m_image(G[0](z_in.detach(),G_z))
                 G_z = G[1](z_in2.detach(),G[0](z_in2.detach(),G_z))
                 G_z = imresize(G_z,1/opt.scale_factor,opt)
-                G_z = G_z[:,:,0:real_next[0].shape[2],0:real_next[0].shape[3]]
+                G_z = G_z[:,:,0:real_next.shape[2],0:real_next.shape[3]]
                 #if count != (len(Gs)-1):
                 #    G_z = m_image(G_z)
                 count += 1
