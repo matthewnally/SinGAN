@@ -81,8 +81,8 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
     z_opt = m_noise(z_opt)
 
     # setup optimizer
-    optimizerD = optim.Adam(filter(lambda p: p.requires_grad, netD.parameters()), lr=opt.lr_d, betas=(opt.beta1, 0.999))
-    optimizerG = optim.Adam(netG.parameters(), lr=opt.lr_g, betas=(opt.beta1, 0.999))
+    optimizerD = optim.RMSprop(filter(lambda p: p.requires_grad, netD.parameters()),lr=opt.lr_g, weight_decay=0.0001)
+    optimizerG = optim.RMSprop(netG.parameters(), lr=opt.lr_g)
     schedulerD = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD,milestones=[1600],gamma=opt.gamma)
     schedulerG = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG,milestones=[1600],gamma=opt.gamma)
 
@@ -196,7 +196,7 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
         D_fake2plot.append(D_G_z)
         z_opt2plot.append(rec_loss)
 
-        if epoch % 25 == 0 or epoch == (opt.niter-1):
+        if epoch % 500 == 0 or epoch == (opt.niter-1):
             print('scale %d:[%d/%d]' % (len(Gs), epoch, opt.niter))
 
         if epoch % 500 == 0 or epoch == (opt.niter-1):
