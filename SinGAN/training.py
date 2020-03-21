@@ -7,6 +7,7 @@ import torch.utils.data
 import math
 import matplotlib.pyplot as plt
 from SinGAN.imresize import imresize
+import time
 
 def train(opt,Gs,Zs,reals,NoiseAmp):
     real_ = functions.read_image(opt)
@@ -16,6 +17,11 @@ def train(opt,Gs,Zs,reals,NoiseAmp):
     reals = functions.creat_reals_pyramid(real,reals,opt)
     nfc_prev = 0
 
+    timings = open("timings.txt","a+")
+    timings.write(opt.input_name+"\t"+str(opt.spec_mode)+"\t")
+
+    time_start = time.time()
+    time_last = time_start
     while scale_num<opt.stop_scale+1:
         opt.nfc = min(opt.nfc_init * pow(2, math.floor(scale_num / 4)), 128)
         opt.min_nfc = min(opt.min_nfc_init * pow(2, math.floor(scale_num / 4)), 128)
@@ -55,6 +61,13 @@ def train(opt,Gs,Zs,reals,NoiseAmp):
         scale_num+=1
         nfc_prev = opt.nfc
         del D_curr,G_curr
+        time_iter = time.time()
+        time_split = time_iter - time_last
+        time_last = time_iter
+        timings.write("\t{0:.2f}".format(time_split))
+
+    timings.write("\t{0:.2f}\tEND\n".format(time_iter-time_start))
+    timings.close()
     return
 
 
@@ -81,8 +94,13 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
     z_opt = m_noise(z_opt)
 
     # setup optimizer
-    optimizerD = optim.RMSprop(filter(lambda p: p.requires_grad, netD.parameters()),lr=opt.lr_g, weight_decay=0.0001)
-    optimizerG = optim.RMSprop(netG.parameters(), lr=opt.lr_g)
+    if opt.spec_mode == True:
+        optimizerD = optim.RMSprop(filter(lambda p: p.requires_grad, netD.parameters()),lr=opt.lr_g, weight_decay=0.0001)
+        optimizerG = optim.RMSprop(netG.parameters(), lr=opt.lr_g)
+    else:
+        optimizerD = optim.Adam(netD.parameters(), lr=opt.lr_d, betas=(opt.beta1, 0.999))
+        optimizerG = optim.Adam(netG.parameters(), lr=opt.lr_g, betas=(opt.beta1, 0.999))
+
     schedulerD = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD,milestones=[1600],gamma=opt.gamma)
     schedulerG = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG,milestones=[1600],gamma=opt.gamma)
 
@@ -158,8 +176,9 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
             errD_fake.backward(retain_graph=True)
             D_G_z = output.mean().item()
 
-            #gradient_penalty = functions.calc_gradient_penalty(netD, real, fake, opt.lambda_grad, opt.device)
-            #gradient_penalty.backward()
+            if opt.spec_mode == False:
+                gradient_penalty = functions.calc_gradient_penalty(netD, real, fake, opt.lambda_grad, opt.device)
+                gradient_penalty.backward()
 
             errD = errD_real + errD_fake #+ gradient_penalty
             optimizerD.step()
@@ -313,8 +332,13 @@ def init_models(opt):
     print(netG)
 
     #discriminator initialization:
-    netD = models.WDiscriminator(opt).to(opt.device)
-    netD.apply(models.spectral_weights_init)
+
+    if opt.spec_mode == True:
+        netD = models.SpectralWDiscriminator(opt).to(opt.device)
+        netD.apply(models.spectral_weights_init)
+    else:
+        netD = models.WDiscriminator(opt).to(opt.device)
+        netD.apply(models.weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
     print(netD)
