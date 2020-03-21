@@ -88,9 +88,8 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
     z_opt = m_noise(z_opt)
 
     # setup optimizer
-
-    optimizerD = [optim.Adam(netD[i].parameters(), lr=opt.lr_d, betas=(opt.beta1, 0.999)) for i in range(2)]
-    optimizerG = [optim.Adam(netG[i].parameters(), lr=opt.lr_g, betas=(opt.beta1, 0.999)) for i in range(2)]
+    optimizerD = [optim.RMSprop(filter(lambda p: p.requires_grad, netD.parameters()),lr=opt.lr_g, weight_decay=0.0001) for i in range(2)]
+    optimizerG = [optim.RMSprop(netG.parameters(), lr=opt.lr_g) for i in range(2)]
     schedulerD = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
     schedulerG = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
 
@@ -290,12 +289,12 @@ def init_models(opt):
     print(netG)
 
     #discriminator initialization:
-    netD = models.WDiscriminator(opt).to(opt.device)
+    netD = models.SpectralWDiscriminator(opt).to(opt.device)
     netD.apply(models.spectral_weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
     print(netD)
-    netD2 = models.WDiscriminator(opt).to(opt.device)
+    netD2 = models.SpectralWDiscriminator(opt).to(opt.device)
     netD2.apply(models.spectral_weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
