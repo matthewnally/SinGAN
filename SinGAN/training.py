@@ -32,10 +32,7 @@ def train(opt,Gs,Zs,reals,NoiseAmp):
         plt.imsave('%s/real_scale1.png' %  (opt.outf), functions.convert_image_np(reals[0][scale_num]), vmin=0, vmax=1)
         plt.imsave('%s/real_scale2.png' %  (opt.outf), functions.convert_image_np(reals[1][scale_num]), vmin=0, vmax=1)
 
-        D_curr1,G_curr1 = init_models(opt)
-        D_curr2,G_curr2 = init_models(opt)
-        D_curr = [D_curr1, D_curr2]
-        G_curr = [G_curr1, G_curr2]
+        D_curr,G_curr = init_models(opt)
 
         if (nfc_prev==opt.nfc):
             G_curr[0].load_state_dict(torch.load('%s/%d/netG1.pth' % (opt.out_,scale_num-1)))
@@ -91,17 +88,11 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
     z_opt = m_noise(z_opt)
 
     # setup optimizer
-<<<<<<< HEAD
-    optimizerD = optim.Adam(filter(lambda p: p.requires_grad, netD.parameters()), lr=opt.lr_d, betas=(opt.beta1, 0.999))
-    optimizerG = optim.Adam(netG.parameters(), lr=opt.lr_g, betas=(opt.beta1, 0.999))
-    schedulerD = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD,milestones=[1600],gamma=opt.gamma)
-    schedulerG = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG,milestones=[1600],gamma=opt.gamma)
-=======
+
     optimizerD = [optim.Adam(netD[i].parameters(), lr=opt.lr_d, betas=(opt.beta1, 0.999)) for i in range(2)]
     optimizerG = [optim.Adam(netG[i].parameters(), lr=opt.lr_g, betas=(opt.beta1, 0.999)) for i in range(2)]
     schedulerD = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
     schedulerG = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
->>>>>>> 7bd958e30c82e20f756cc060e7e5f75e48a4df3b
 
     errD2plot = []
     errG2plot = []
@@ -166,7 +157,7 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
 
             # the money maker
             fake1 = netG[0](noise.detach(),prev)
-            fake2 = netG[1](noise.detach(),fake1)
+            fake2 = netG[1](fake1)
             output1 = netD[0](fake1.detach())
             output2 = netD[1](fake2.detach())
             errD_fake1 = output1.mean()
@@ -176,13 +167,6 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
 
             # D_G_z = output.mean().item() # for graphing only
 
-<<<<<<< HEAD
-            #gradient_penalty = functions.calc_gradient_penalty(netD, real, fake, opt.lambda_grad, opt.device)
-            #gradient_penalty.backward()
-
-            errD = errD_real + errD_fake #+ gradient_penalty
-            optimizerD.step()
-=======
             # this is wasserstiens
             gradient_penalty = functions.calc_gradient_penalty(netD, real, [fake1, fake2], opt.lambda_grad, opt.device)
             gradient_penalty.backward()
@@ -190,7 +174,7 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
             #errD = errD_real + errD_fake + gradient_penalty
             optimizerD[0].step()
             optimizerD[1].step()
->>>>>>> 7bd958e30c82e20f756cc060e7e5f75e48a4df3b
+
 
         #errD2plot.append(errD.detach())
 
@@ -297,6 +281,12 @@ def init_models(opt):
     netG.apply(models.weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
+    print(netG
+
+    netG2 = models.GeneratorReconstruct(opt).to(opt.device)
+    netG2.apply(models.weights_init)
+    if opt.netG != '':
+        netG.load_state_dict(torch.load(opt.netG))
     print(netG)
 
     #discriminator initialization:
@@ -305,5 +295,10 @@ def init_models(opt):
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
     print(netD)
+    netD2 = models.WDiscriminator(opt).to(opt.device)
+    netD2.apply(models.spectral_weights_init)
+    if opt.netD != '':
+        netD.load_state_dict(torch.load(opt.netD))
+    print(netD2)
 
-    return netD, netG
+    return [netD, netD2], [netG, netG2]
