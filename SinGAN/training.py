@@ -88,8 +88,8 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
     z_opt = m_noise(z_opt)
 
     # setup optimizer
-    optimizerD = [optim.RMSprop(filter(lambda p: p.requires_grad, netD.parameters()),lr=opt.lr_g, weight_decay=0.0001) for i in range(2)]
-    optimizerG = [optim.RMSprop(netG.parameters(), lr=opt.lr_g) for i in range(2)]
+    optimizerD = [optim.RMSprop(filter(lambda p: p.requires_grad, netD[i].parameters()),lr=opt.lr_g, weight_decay=0.0001) for i in range(2)]
+    optimizerG = [optim.RMSprop(netG[i].parameters(), lr=opt.lr_g) for i in range(2)]
     schedulerD = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerD[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
     schedulerG = [torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizerG[i],milestones=[1600],gamma=opt.gamma) for i in range(2)]
 
@@ -195,9 +195,9 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
                 loss = nn.MSELoss()
                 Z_opt = opt.noise_amp*z_opt+z_prev
 
-                im1 = m_image(netG[0](Z_opt.detach(),z_prev))
+                im1 = m_image(netG[0](Z_opt.detach(),z_prev))  # ARE YOU SURE
                 #print(im1.size(), Z_opt.detach().size(), real[0].size())
-                rec_loss = alpha*loss(netG[1](im1, z_prev),real[0])
+                rec_loss = alpha*loss(netG[1](im1),real[0])
                 rec_loss.backward(retain_graph=True)
                 rec_loss = rec_loss.detach()
 
@@ -254,7 +254,7 @@ def draw_concat(Gs,Zs,reals,NoiseAmp,in_s,mode,m_noise,m_image,opt):
                 G_z = m_image(G_z)
                 z_in = noise_amp*z+G_z
                 z_in2= noise_amp*z+m_image(G[0](z_in.detach(),G_z))
-                G_z = G[1](z_in2.detach(),G[0](z_in.detach(),G_z))
+                G_z = G[1](m_image(G[0](z_in.detach(),G_z)))
                 G_z = imresize(G_z,1/opt.scale_factor,opt)
                 G_z = G_z[:,:,0:real_next.shape[2],0:real_next.shape[3]]
                 count += 1
@@ -264,8 +264,7 @@ def draw_concat(Gs,Zs,reals,NoiseAmp,in_s,mode,m_noise,m_image,opt):
                 G_z = G_z[:, :, 0:real_curr.shape[2], 0:real_curr.shape[3]]
                 G_z = m_image(G_z)
                 z_in = noise_amp*Z_opt+G_z
-                z_in2 = noise_amp*Z_opt+m_image(G[0](z_in.detach(),G_z))
-                G_z = G[1](z_in2.detach(),G[0](z_in.detach(),G_z))
+                G_z = G[1](m_image(G[0](z_in.detach(),G_z)))
                 G_z = imresize(G_z,1/opt.scale_factor,opt)
                 G_z = G_z[:,:,0:real_next.shape[2],0:real_next.shape[3]]
                 #if count != (len(Gs)-1):
@@ -280,13 +279,13 @@ def init_models(opt):
     netG.apply(models.weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
-    print(netG
+    print(netG)
 
     netG2 = models.GeneratorReconstruct(opt).to(opt.device)
     netG2.apply(models.weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
-    print(netG)
+    print(netG2)
 
     #discriminator initialization:
     netD = models.SpectralWDiscriminator(opt).to(opt.device)

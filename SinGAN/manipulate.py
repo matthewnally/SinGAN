@@ -130,8 +130,7 @@ def SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,in_s=None,scale_v=1,scale_h=1,n=0,g
 
             z_in = noise_amp*(z_curr)+I_prev
             I_curr_mid = G[0](z_in.detach(),I_prev)
-            z_in2 = noise_amp*(z_curr)+m(G[0](z_in.detach(),I_prev))
-            I_curr = G[1](z_in2.detach(),G[0](z_in.detach(),I_curr_mid))
+            I_curr = G[1](m(G[0](z_in.detach(),I_curr_mid)))
 
             if n == len(reals)-1:
                 if opt.mode == 'train':
