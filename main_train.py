@@ -18,6 +18,7 @@ if __name__ == '__main__':
     opt = functions.post_config(opt)
     Gs = []
     Zs = []
+
     reals = []
     NoiseAmp = []
     dir2save = functions.generate_dir2save(opt)
@@ -37,9 +38,13 @@ if __name__ == '__main__':
     real = functions.read_image(opt)
     functions.adjust_scales2image(real, opt)
     train(opt, Gs, Zs, reals, NoiseAmp)
+    reals1 = []
+    reals2 = []
     real_ = functions.read_images(opt)
     real = [imresize(real_[0],opt.scale1,opt), imresize(real_[1],opt.scale1,opt)]
-    reals = [functions.creat_reals_pyramid(real[0],reals,opt), functions.creat_reals_pyramid(real[1],reals,opt)]
+    reals1 = functions.creat_reals_pyramid(real[0],reals1,opt)
+    reals2 = functions.creat_reals_pyramid(real[1],reals2,opt)
+    reals = [reals1, reals2]
     SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt)
     SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt, gen_start_scale = 4)
     SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt, gen_start_scale = 8)

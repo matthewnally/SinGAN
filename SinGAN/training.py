@@ -9,11 +9,15 @@ import matplotlib.pyplot as plt
 from SinGAN.imresize import imresize
 
 def train(opt,Gs,Zs,reals,NoiseAmp):
+    reals1 = []
+    reals2 = []
     real_ = functions.read_images(opt)
     in_s = 0
     scale_num = 0
     real = [imresize(real_[0],opt.scale1,opt), imresize(real_[1],opt.scale1,opt)]
-    reals = [functions.creat_reals_pyramid(real[0],reals,opt), functions.creat_reals_pyramid(real[1],reals,opt)]
+    reals1 = functions.creat_reals_pyramid(real[0],reals1,opt)
+    reals2 = functions.creat_reals_pyramid(real[1],reals2,opt)
+    reals = [reals1, reals2]
     nfc_prev = 0
 
     while scale_num<opt.stop_scale+1:
