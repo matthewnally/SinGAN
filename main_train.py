@@ -41,3 +41,5 @@ if __name__ == '__main__':
     real = [imresize(real_[0],opt.scale1,opt), imresize(real_[1],opt.scale1,opt)]
     reals = [functions.creat_reals_pyramid(real[0],reals,opt), functions.creat_reals_pyramid(real[1],reals,opt)]
     SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt)
+    SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt, gen_start_scale = 4)
+    SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt, gen_start_scale = 8)
