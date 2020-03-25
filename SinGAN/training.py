@@ -176,7 +176,7 @@ def train_single_scale(netD,netG,reals,Gs,Zs,in_s,NoiseAmp,opt,centers=None):
             errD_fake.backward(retain_graph=True)
             D_G_z = output.mean().item()
 
-            if opt.spec_mode == False:
+            if opt.gradient_on:
                 gradient_penalty = functions.calc_gradient_penalty(netD, real, fake, opt.lambda_grad, opt.device)
                 gradient_penalty.backward()
 

@@ -11,8 +11,10 @@ if __name__ == '__main__':
     parser.add_argument('--mode', help='task to be done', default='train')
     parser.add_argument('--spec_norm',dest = "spec_mode", action="store_true")
     parser.add_argument('--overwrite',dest = "overwrite", action="store_true")
+    parser.add_argument('--grad_penalty',dest = "gradient_on", action="store_true")
     parser.set_defaults(spec_mode=False)
     parser.set_defaults(overwrite=False)
+    parser.set_defaults(gradient_on=False)
     opt = parser.parse_args()
     opt = functions.post_config(opt)
     Gs = []
