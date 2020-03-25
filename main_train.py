@@ -44,3 +44,5 @@ if __name__ == '__main__':
         functions.adjust_scales2image(real, opt)
         train(opt, Gs, Zs, reals, NoiseAmp)
         SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt)
+        SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,gen_start_scale=4)
+        SinGAN_generate(Gs,Zs,reals,NoiseAmp,opt,gen_start_scale=7)
